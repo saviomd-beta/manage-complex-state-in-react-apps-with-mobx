@@ -1,5 +1,6 @@
 import {decorate, observable} from 'mobx';
 import {observer} from 'mobx-react';
+import DevTools from 'mobx-react-devtools';
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 
@@ -23,6 +24,7 @@ const Counter = observer(class Counter extends Component {
   render () {
     return (
       <div>
+        <DevTools />
         Counter: {this.props.store.count}<br />
         <button onClick={this.handleDec}>-</button>
         <button onClick={this.handleInc}>+</button>
