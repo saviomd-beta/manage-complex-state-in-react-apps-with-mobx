@@ -5,17 +5,18 @@ import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 
 class Temperature {
+  id = Math.random();
   unit = 'C';
   temperatureCelsius = 25;
-  temperatureKelvin() {
+  get temperatureKelvin() {
     console.log('calculating Kelvin');
     return this.temperatureCelsius * (9 / 5) + 32;
   }
-  temperatureFahrenheit() {
+  get temperatureFahrenheit() {
     console.log('calculating Fahrenheit');
     return this.temperatureCelsius + 273.15;
   }
-  temperature() {
+  get temperature() {
     console.log('calculating temperature');
     switch (this.unit) {
       case 'K': return `${this.temperatureKelvin()}ºK`;
@@ -24,21 +25,26 @@ class Temperature {
     }
   }
 }
-// decorate(Temperature, {
-//   unit: observable,
-//   temperatureCelsius: observable,
-//   temperatureKelvin: computed,
-//   temperatureFahrenheit: computed,
-//   temperature: computed,
-// })
+decorate(Temperature, {
+  unit: observable,
+  temperatureCelsius: observable,
+  temperatureKelvin: computed,
+  temperatureFahrenheit: computed,
+  temperature: computed,
+})
 
-const t = new Temperature();
+const temps = observable.map({
+  'Amsterdam': new Temperature(),
+  'Rome': new Temperature(),
+});
 
 const App = observer(({ temperature }) => (
   <div>
-    {temperature.temperature()}
+    {Array.from(temperature.keys(), city =>
+      <div key={city}>{city}: {temperature.get(city).temperature}</div>
+    )}
     <DevTools />
   </div>
 ));
 
-ReactDOM.render(<App temperature={t} />, document.getElementById('root'));
+ReactDOM.render(<App temperature={temps} />, document.getElementById('root'));
