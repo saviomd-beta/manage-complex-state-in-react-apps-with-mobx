@@ -1,41 +1,44 @@
-import {decorate, observable} from 'mobx';
+import {computed, decorate, observable} from 'mobx';
 import {observer} from 'mobx-react';
 import DevTools from 'mobx-react-devtools';
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 
-const appState = observable({
-  count: 0
-})
-appState.decrement = function() {
-  this.count--;
+class Temperature {
+  unit = 'C';
+  temperatureCelsius = 25;
+  temperatureKelvin() {
+    console.log('calculating Kelvin');
+    return this.temperatureCelsius * (9 / 5) + 32;
+  }
+  temperatureFahrenheit() {
+    console.log('calculating Fahrenheit');
+    return this.temperatureCelsius + 273.15;
+  }
+  temperature() {
+    console.log('calculating temperature');
+    switch (this.unit) {
+      case 'K': return `${this.temperatureKelvin()}ºK`;
+      case 'F': return `${this.temperatureFahrenheit()}ºF`;
+      default: return `${this.temperatureCelsius}ºC`;
+    }
+  }
 }
-appState.increment = function() {
-  this.count++;
-}
+// decorate(Temperature, {
+//   unit: observable,
+//   temperatureCelsius: observable,
+//   temperatureKelvin: computed,
+//   temperatureFahrenheit: computed,
+//   temperature: computed,
+// })
 
-const Counter = observer(class Counter extends Component {
-  handleDec = () => {
-    this.props.store.decrement();
-  }
-  handleInc = () => {
-    this.props.store.increment();
-  }
-  render () {
-    return (
-      <div>
-        <DevTools />
-        Counter: {this.props.store.count}<br />
-        <button onClick={this.handleDec}>-</button>
-        <button onClick={this.handleInc}>+</button>
-      </div>
-    )
-  }
-})
+const t = new Temperature();
 
-decorate(Counter, {
-  count: observable,
-});
+const App = observer(({ temperature }) => (
+  <div>
+    {temperature.temperature()}
+    <DevTools />
+  </div>
+));
 
-ReactDOM.render(<Counter store={appState} />, document.getElementById('root')
-);
+ReactDOM.render(<App temperature={t} />, document.getElementById('root'));
