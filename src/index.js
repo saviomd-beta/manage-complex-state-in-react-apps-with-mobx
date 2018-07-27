@@ -1,15 +1,16 @@
-import {action, computed, decorate, observable, useScript} from 'mobx';
+import {action, computed, decorate, observable} from 'mobx';
 import {observer} from 'mobx-react';
 import DevTools from 'mobx-react-devtools';
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 
-useScript(true);
-
 class Temperature {
   id = Math.random();
   unit = 'C';
   temperatureCelsius = 25;
+  constructor(degrees, unit) {
+    this.setTemperatureAndUnit(degrees, unit);
+  }
   get temperatureKelvin() {
     console.log('calculating Kelvin');
     return this.temperatureCelsius * (9 / 5) + 32;
@@ -21,8 +22,8 @@ class Temperature {
   get temperature() {
     console.log('calculating temperature');
     switch (this.unit) {
-      case 'K': return `${this.temperatureKelvin()}ºK`;
-      case 'F': return `${this.temperatureFahrenheit()}ºF`;
+      case 'K': return `${this.temperatureKelvin}ºK`;
+      case 'F': return `${this.temperatureFahrenheit}ºF`;
       default: return `${this.temperatureCelsius}ºC`;
     }
   }
@@ -36,6 +37,9 @@ class Temperature {
     this.setCelsius(degrees);
     this.setUnit(unit);
   }
+  inc() {
+    this.setCelsius(this.temperatureCelsius + 1);
+  }
 }
 decorate(Temperature, {
   setCelsius: action,
@@ -48,18 +52,35 @@ decorate(Temperature, {
   temperature: computed,
 })
 
-const temps = observable.map({
-  'Amsterdam': new Temperature(),
-  'Rome': new Temperature(),
-});
+const temps = observable([]);
+temps.push(new Temperature(20, 'K'));
+temps.push(new Temperature(25, 'F'));
+temps.push(new Temperature(20, 'C'));
 
-const App = observer(({ temperature }) => (
-  <div>
-    {Array.from(temperature.keys(), city =>
-      <div key={city}>{city}: {temperature.get(city).temperature}</div>
+const App = observer(({ temperatures }) => (
+  <ul>
+    {temperatures.map(t =>
+      <TView key={t.id} temperature={t} />
     )}
     <DevTools />
-  </div>
+  </ul>
 ));
 
-ReactDOM.render(<App temperature={temps} />, document.getElementById('root'));
+const TView = observer(class TView extends Component {
+  onTemperatureClick = () => {
+    this.props.temperature.inc();
+  }
+  render () {
+    const t = this.props.temperature;
+    return (
+      <li
+        key={t.id}
+        onClick={this.onTemperatureClick}
+      >
+        {t.temperature}
+      </li>
+    )
+  };
+});
+
+ReactDOM.render(<App temperatures={temps} />, document.getElementById('root'));
