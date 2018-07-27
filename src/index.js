@@ -1,5 +1,5 @@
 import {action, computed, decorate, observable} from 'mobx';
-import {observer} from 'mobx-react';
+import {inject, observer, Provider} from 'mobx-react';
 import DevTools from 'mobx-react-devtools';
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
@@ -69,40 +69,43 @@ decorate(Temperature, {
   temperature: computed,
 })
 
-const temps = observable([]);
+const App = inject(['temperatures'])(
+  observer(
+    ({ temperatures }) => (
+    <ul>
+      <TemperatureInput />
+      {temperatures.map(t =>
+        <TView key={t.id} temperature={t} />
+      )}
+      <DevTools />
+    </ul>
+  ))
+);
 
-const App = observer(({ temperatures }) => (
-  <ul>
-    <TemperatureInput temperatures={temperatures} />
-    {temperatures.map(t =>
-      <TView key={t.id} temperature={t} />
-    )}
-    <DevTools />
-  </ul>
-));
-
-const TemperatureInput = observer(class TemperatureInput extends Component {
-  input = '';
-  onChange = (e) => {
-    this.input = e.target.value;
-  }
-  onSubmit = () => {
-    this.props.temperatures.push(
-      new Temperature(this.input)
-    );
-    this.input = '';
-  }
-  render() {
-    return (
-      <li>
-        Destination:
-        <input onChange={this.onChange} value={this.input} />
-        <button onClick={this.onSubmit}>Add</button>
-      </li>
-    )
-  }
-})
-decorate(TemperatureInput, {
+const TemperatureInput = inject(['temperatures'])(
+  observer(class TemperatureInput extends Component {
+    input = '';
+    onChange = (e) => {
+      this.input = e.target.value;
+    }
+    onSubmit = () => {
+      this.props.temperatures.push(
+        new Temperature(this.input)
+      );
+      this.input = '';
+    }
+    render() {
+      return (
+        <li>
+          Destination:
+          <input onChange={this.onChange} value={this.input} />
+          <button onClick={this.onSubmit}>Add</button>
+        </li>
+      )
+    }
+  })
+)
+decorate(TemperatureInput.wrappedComponent, {
   input: observable,
   onChange: action,
 })
@@ -125,4 +128,11 @@ const TView = observer(class TView extends Component {
   };
 });
 
-ReactDOM.render(<App temperatures={temps} />, document.getElementById('root'));
+const temps = observable([]);
+
+ReactDOM.render(
+  <Provider temperatures={temps}>
+    <App />
+  </Provider>,
+  document.getElementById('root')
+);
