@@ -1,8 +1,10 @@
-import {computed, decorate, observable} from 'mobx';
+import {action, computed, decorate, observable, useScript} from 'mobx';
 import {observer} from 'mobx-react';
 import DevTools from 'mobx-react-devtools';
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
+
+useScript(true);
 
 class Temperature {
   id = Math.random();
@@ -24,8 +26,21 @@ class Temperature {
       default: return `${this.temperatureCelsius}ºC`;
     }
   }
+  setUnit(newUnit) {
+    this.unit = newUnit;
+  }
+  setCelsius(degrees) {
+    this.temperatureCelsius = degrees;
+  }
+  setTemperatureAndUnit(degrees, unit) {
+    this.setCelsius(degrees);
+    this.setUnit(unit);
+  }
 }
 decorate(Temperature, {
+  setCelsius: action,
+  setTemperatureAndUnit: action,
+  setUnit: action,
   unit: observable,
   temperatureCelsius: observable,
   temperatureKelvin: computed,
