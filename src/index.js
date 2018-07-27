@@ -1,4 +1,4 @@
-import {action, computed, decorate, observable} from 'mobx';
+import {action, autorun, computed, decorate, observable, when} from 'mobx';
 import {inject, observer, Provider} from 'mobx-react';
 import DevTools from 'mobx-react-devtools';
 import React, { Component } from 'react';
@@ -49,7 +49,6 @@ class Temperature {
     window.fetch(`http://api.openweathermap.org/data/2.5/weather?appid=${APPID}&q=${this.location}`)
       .then(res => res.json())
       .then(action(json => {
-        console.log(json);
         this.temperatureCelsius = (json.main.temp - 273.15);
         this.loading = false;
       }))
@@ -130,9 +129,41 @@ const TView = observer(class TView extends Component {
 
 const temps = observable([]);
 
-ReactDOM.render(
-  <Provider temperatures={temps}>
-    <App />
-  </Provider>,
-  document.getElementById('root')
-);
+// ReactDOM.render(
+//   <Provider temperatures={temps}>
+//     <App />
+//   </Provider>,
+//   document.getElementById('root')
+// );
+
+function isNice(t) {
+  return t.temperatureCelsius > 25;
+}
+
+when(
+  () => temps.some(isNice),
+  () => {
+    const t = temps.find(isNice);
+    alert(`Book now! ${t.location}`)
+  }
+)
+
+function render(temperatures) {
+  return `
+    <ul>
+      ${temperatures.map(t => `
+        <li>
+          ${t.location}:
+          ${t.loading ? 'loading' : t.temperature}
+        </li>
+      `).join('')}
+    </ul>
+  `
+}
+
+temps.push(new Temperature('Amsterdam'));
+temps.push(new Temperature('Rotterdam'));
+
+autorun(() => {
+  document.getElementById('root').innerHTML = render(temps);
+});
