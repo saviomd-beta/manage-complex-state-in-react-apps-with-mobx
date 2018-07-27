@@ -4,12 +4,17 @@ import DevTools from 'mobx-react-devtools';
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 
+const APPID = '6c9bb64443d124019b41ea00de26732e';
+
 class Temperature {
   id = Math.random();
   unit = 'C';
   temperatureCelsius = 25;
-  constructor(degrees, unit) {
-    this.setTemperatureAndUnit(degrees, unit);
+  loading = true;
+  location = 'Amsterdam, NL';
+  constructor(location) {
+    this.location = location;
+    this.fetch();
   }
   get temperatureKelvin() {
     console.log('calculating Kelvin');
@@ -40,8 +45,20 @@ class Temperature {
   inc() {
     this.setCelsius(this.temperatureCelsius + 1);
   }
+  fetch() {
+    window.fetch(`http://api.openweathermap.org/data/2.5/weather?appid=${APPID}&q=${this.location}`)
+      .then(res => res.json())
+      .then(action(json => {
+        console.log(json);
+        this.temperatureCelsius = (json.main.temp - 273.15);
+        this.loading = false;
+      }))
+  }
 }
 decorate(Temperature, {
+  fetch: action,
+  loading: observable,
+  location: observable,
   setCelsius: action,
   setTemperatureAndUnit: action,
   setUnit: action,
@@ -53,18 +70,42 @@ decorate(Temperature, {
 })
 
 const temps = observable([]);
-temps.push(new Temperature(20, 'K'));
-temps.push(new Temperature(25, 'F'));
-temps.push(new Temperature(20, 'C'));
 
 const App = observer(({ temperatures }) => (
   <ul>
+    <TemperatureInput temperatures={temperatures} />
     {temperatures.map(t =>
       <TView key={t.id} temperature={t} />
     )}
     <DevTools />
   </ul>
 ));
+
+const TemperatureInput = observer(class TemperatureInput extends Component {
+  input = '';
+  onChange = (e) => {
+    this.input = e.target.value;
+  }
+  onSubmit = () => {
+    this.props.temperatures.push(
+      new Temperature(this.input)
+    );
+    this.input = '';
+  }
+  render() {
+    return (
+      <li>
+        Destination:
+        <input onChange={this.onChange} value={this.input} />
+        <button onClick={this.onSubmit}>Add</button>
+      </li>
+    )
+  }
+})
+decorate(TemperatureInput, {
+  input: observable,
+  onChange: action,
+})
 
 const TView = observer(class TView extends Component {
   onTemperatureClick = () => {
@@ -77,7 +118,8 @@ const TView = observer(class TView extends Component {
         key={t.id}
         onClick={this.onTemperatureClick}
       >
-        {t.temperature}
+        {t.location}:
+        {t.loading ? 'loading...' : t.temperature}
       </li>
     )
   };
